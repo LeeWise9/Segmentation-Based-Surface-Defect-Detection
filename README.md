@@ -104,6 +104,8 @@ This is a deep learning application project in the industrial field, intended to
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B9.png" alt="Sample"  width="600">
 </p>
 
+（注：label为人工标签；output为数值连续的网络输出；result是经二值化处理的最终结果）
+
 ## 结论<br>
 * 1.查全率较高，大部分缺陷样本均能正确分类，漏检少
 * 2.查准率待提升，需减少对负样本的错误分类，有误检
