@@ -43,7 +43,7 @@ This is a deep learning application project in the industrial field, intended to
 
 ## 推理<br>
 <p align="center">
-	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B6.png" alt="Sample"  width="600">
+	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B10.png" alt="Sample"  width="600">
 </p>
 
 
