@@ -6,17 +6,35 @@ This is a deep learning application project in the industrial field, intended to
 论文：[Segmentation-Based Deep-Learning Approach for Surface-Defect Detection](https://arxiv.org/abs/1903.08536)。
 
 ## 研究目标<br>
+工件疲劳、损坏的现象广泛存在于工业界，鉴于其潜在的安全隐患，一种低成本高效率的表面缺陷检测方法亟待开发。
+
+基于卷积神经网络的深度学习方法天然适合于解决此类问题，如下是研究目标。
+
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B1.png" alt="Sample"  width="700">
 </p>
 
+工件表面的高清图像经预处理后使用神经网络做预测，输出两个信息：1.表面是否有缺陷；2.如有缺陷则使用分割方法将其标出。
 
 ## 数据集<br>
+本项目使用的是公开的[KolektorSDD 数据集](http://www.vicos.si/Downloads/KolektorSDD)。
+
+该数据集样本较少，共有 399 个样本，正样本与负样本的数量分别为 52 和 347，图片形状为 500 x 1267 (1267 为典型值，还有其他尺寸)。
+
+以下是数据集中的一些样本图像：<br>
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B2.png" alt="Sample"  width="500">
 </p>
 
-样本扩充
+每一张工件的图像都有一个对应的等尺寸的二值化 mask 图像，为人工标注的表面缺陷。无缺陷的样本，其 mask 是全黑的图像。
+
+考虑到样本少且比例不均，需要对数据进行样本增强与扩充（未完全按照原文实现）。
+
+我的做法是将原图裁减为 500 x 500 的正方形图像，并随机做旋转、翻转、缩放等，同时调整图像亮度并添加噪声，这样可以有效增加样本数量。
+
+为了使样本比例均衡，我控制了正负样本生成的数量比为 1:1。详见 data_manager.py。
+
+以下是一些正样本和对应的 mask 的示意图。
 
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B51.png" alt="Sample"  width="500">
@@ -27,19 +45,29 @@ This is a deep learning application project in the industrial field, intended to
 </p>
 
 
-
 ## 网络结构<br>
+下图为原文作者设计的网络结构：<br>
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B3.png" alt="Sample"  width="700">
 </p>
 
+从结构图可以看出几个明显特征：有两个网络主体：分割网络和决策网络；有两个输出：分割输出和分类输出。同时，区别于一般做法，该结构采用了尺寸相对较大的卷积核：5x5 和 15x15；只有下采样层而没有上采样层。
+
+原文的解释是，采用较大的卷积核可以获得更大的感受野；省去上采样层可以节省很多参数与计算量，更适合于工业落地。
+
+我在复现论文是做了一些改进：将 15x15 的卷积核改为 5x5 的卷积核省去了一半的参数；且在分类输出层增加了 softmax 激活层（原文采用线性激活函数）。
 
 ## 训练<br>
+原文将两个主体网络分开、分步训练。原因包括网络参数较大难以训练，同时两部分网络的损失权值不好确定。
 
+我设计的训练步骤如下图所示：<br>
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B4.png" alt="Sample"  width="600">
 </p>
 
+这两步训练主要更改了分割网络的目标函数：mse-->binary_crossentropy；同时减小了学习率。
+
+另外，分割网络与决策网络的误差权重比为 1:0.5；分割网络与决策网络均采用 softmax 激活函数。
 
 ## 推理<br>
 <p align="center">
