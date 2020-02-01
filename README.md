@@ -58,36 +58,54 @@ This is a deep learning application project in the industrial field, intended to
 我在复现论文是做了一些改进：将 15x15 的卷积核改为 5x5 的卷积核省去了一半的参数；且在分类输出层增加了 softmax 激活层（原文采用线性激活函数）。
 
 ## 训练<br>
-原文将两个主体网络分开、分步训练。原因包括网络参数较大难以训练，同时两部分网络的损失权值不好确定。
+由于网络结构中没有设计上采样层，其输出将小于输入尺寸。因此在准备喂入数据时，要缩放处理 mask 图片。
+
+考虑到表面缺陷形状较窄，缩放后可能分辨率不够，需要在缩放之前对 mask 图像做膨胀处理，使缺陷更明显，这样再经过缩放可以保留更多有效信息。
+
+原文将两个主体网络分开、分步训练。原因是网络参数较大难以训练，同时两部分网络的损失权值不好确定。
 
 我设计的训练步骤如下图所示：<br>
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B4.png" alt="Sample"  width="600">
 </p>
 
-这两步训练主要更改了分割网络的目标函数：mse-->binary_crossentropy；同时减小了学习率。
-
-另外，分割网络与决策网络的误差权重比为 1:0.5；分割网络与决策网络均采用 softmax 激活函数。
+这两步训练主要更改了分割网络的目标函数：mse-->binary_crossentropy；同时减小了学习率。分割网络与决策网络的误差权重比为 1:0.5；分割网络与决策网络均采用 softmax 激活函数。
 
 ## 推理<br>
+推理的过程和训练的主要区别在于，推理前后要保证图片尺寸不改变。
+
+一个自然而然的想法就是将待检测图剪裁成若干份子图，分别输入网络做检测，再对输出做进一步处理。
+
+剪裁的目标形状为 500x500，形状不匹配的再做缩放处理。
+
+对于分类网络的输出，如果所有子图的分类都是无缺陷，则整体无缺陷；如果有一张子图有缺陷，则此样本为缺陷样本。
+
+对于分割网络的输出，其形状均为 62x62，需将其缩放为原先的形状再逐个拼接，最终得到与原图相同形状的 mask。
+
+上述步骤可由下图来表示：
+
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B10.png" alt="Sample"  width="600">
 </p>
 
-
 ## 结果<br>
+这是在 80 个测试样本上的检测统计结果：<br>
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B7.png" alt="Sample"  width="600">
 </p>
 
-
+这是在数据集所有样本上的检测统计结果：<br>
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B8.png" alt="Sample"  width="600">
 </p>
 
-
-
+这是一些输出结果展示：<br>
 <p align="center">
 	<img src="https://github.com/LeeWise9/Img_repositories/blob/master/%E7%BC%BA%E9%99%B7%E6%A3%80%E6%B5%8B9.png" alt="Sample"  width="600">
 </p>
 
+## 结论<br>
+* 1.查全率较高，大部分缺陷样本均能正确分类，漏检少
+* 2.查准率待提升，需减少对负样本的错误分类，有误检
+* 3.该神经网络对噪声不敏感，对块状、条状斑纹敏感
+* 4.分割结果大部分较好，对很细的缺陷分割效果不佳
